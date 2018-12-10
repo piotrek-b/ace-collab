@@ -1,18 +1,11 @@
-import AceBag from './ace-bag'
-// Map paths etc.
-import 'ace-builds/webpack-resolver'
+import '@babel/polyfill';
+import CollabEditor from './collab-editor/collab-editor'
 
-const {
-    Document,
-    Editor,
-    EditSession,
-    VirtualRenderer,
-} = AceBag
+const editor = new CollabEditor({
+    anchorDOM: document.querySelector('#editor'),
+    documentSrc: 'x',
+    mode: 'ace/mode/javascript',
+    theme: 'ace/theme/monokai',
+})
 
-let x = 'let x = 5;'
-const doc = new Document(x)
-const virtualRenderer = new VirtualRenderer(document.querySelector('#editor'))
-const editSession = new EditSession(doc)
-const editor = new Editor(virtualRenderer, editSession)
-editor.setTheme('ace/theme/monokai');
-editSession.setMode('ace/mode/javascript');
+editor.loadShareDBDoc()
