@@ -1,41 +1,43 @@
-var http = require('http');
-var express = require('express');
-var ShareDB = require('sharedb');
-var WebSocket = require('ws');
-var WebSocketJSONStream = require('websocket-json-stream');
+const http = require('http')
+const express = require('express')
+const ShareDB = require('sharedb')
+const WebSocket = require('ws')
+const WebSocketJSONStream = require('websocket-json-stream')
 
-var backend = new ShareDB();
+const backend = new ShareDB()
 
 // Create initial document then fire callback
-function createDoc(callback) {
-  var connection = backend.connect();
-  var doc = connection.get('examples', 'counter');
-  doc.fetch(function(err) {
-    if (err) throw err;
-    if (doc.type === null) {
-      doc.create({text: ['abc']}, callback);
-      return;
-    }
-    callback();
-  });
-}
+const createDoc = () => (
+  new Promise((res) => {
+    const connection = backend.connect()
+    const doc = connection.get('codes', 'counter')
 
-function startServer() {
+    doc.fetch((err) => {
+      if (err) throw err
+      if (doc.type === null) {
+        doc.create({ lines: [''] }, res)
+        return
+      }
+      res()
+    })
+  })
+)
+
+const startServer = () => {
   // Create a web server to serve files and listen to WebSocket connections
-  var app = express();
-  app.use(express.static('static'));
-  var server = http.createServer(app);
+  const app = express()
+  app.use(express.static('static'))
+  const server = http.createServer(app)
 
   // Connect any incoming WebSocket connection to ShareDB
-  var wss = new WebSocket.Server({server: server});
-  wss.on('connection', function(ws, req) {
-    var stream = new WebSocketJSONStream(ws);
-    console.log('connection')
-    backend.listen(stream);
-  });
+  const wss = new WebSocket.Server({ server })
+  wss.on('connection', (ws) => {
+    const stream = new WebSocketJSONStream(ws)
+    backend.listen(stream)
+  })
 
-  server.listen(3000);
-  console.log('Listening on http://localhost:3000');
+  server.listen(3000)
+  console.log('Listening on http://localhost:3000')
 }
 
-createDoc(startServer);
+createDoc().then(startServer)
