@@ -3,7 +3,7 @@ import CollabEditor from './collab-editor/collab-editor'
 
 const configSchema = {
   anchorDOM: null,
-  documentSrc: [],
+  docId: '',
   mode: '',
   theme: '',
 }
@@ -11,12 +11,12 @@ const configSchema = {
 const aceCollab = (config = configSchema) => (
   new Promise(async (res) => {
     const {
-      documentSrc,
+      docId,
       ...configRest
     } = config
 
     const editor = new CollabEditor(configRest)
-    await editor.loadShareDBDoc(documentSrc)
+    await editor.loadShareDBDoc(docId)
 
     res(editor)
   })
@@ -24,7 +24,7 @@ const aceCollab = (config = configSchema) => (
 
 aceCollab({
   anchorDOM: document.querySelector('#editor'),
-  documentSrc: ['codes', '5'],
+  docId: '9203be00-de72-40f6-94fb-d799a8ba0d6d',
   mode: 'ace/mode/csharp',
   theme: 'ace/theme/monokai',
 })

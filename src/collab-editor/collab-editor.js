@@ -37,26 +37,74 @@ const mapAceOpToShareDBOp = (doc, path) => ({
   const ops = []
   const insertOps = []
   const deleteOps = []
-  let curr = start.row
+  const rowCount = end.row - start.row
 
-  while (curr <= end.row) {
-    if (opType === ShareDBOPTypes.SI && doc.data.text[curr] === undefined) {
-      insertOps.push({
-        p: [...path, curr],
-        [ShareDBOPTypes.LI]: lines[curr - start.row],
-      })
-    } else if (opType === ShareDBOPTypes.SD && lines[curr - start.row] === doc.data.text[curr]) {
-      deleteOps.unshift({
-        p: [...path, curr],
-        [ShareDBOPTypes.LD]: doc.data.text[curr],
-      })
-    } else {
+  switch (rowCount) {
+    case 0:
       ops.push({
-        p: [...path, curr, start.column],
-        [opType]: lines[curr - start.row],
+        p: [...path, start.row, start.column],
+        [opType]: lines[0],
       })
-    }
-    curr += 1
+      break;
+    case 1:
+      ops.push({
+        p: [...path, start.row, start.column],
+        [opType]: lines[0],
+      })
+      if (opType === ShareDBOPTypes.SI && doc.data.lines[end.row] === undefined) {
+        insertOps.push({
+          p: [...path, end.row],
+          [ShareDBOPTypes.LI]: lines[1],
+        })
+      } else if (opType === ShareDBOPTypes.SD && doc.data.lines[end.row] === lines[1]) {
+        deleteOps.unshift({
+          p: [...path, end.row],
+          [ShareDBOPTypes.LD]: lines[1],
+        })
+      } else {
+        ops.push({
+          p: [...path, end.row, 0],
+          [opType]: lines[1],
+        })
+      }
+      break;
+    default:
+      let current = start.row + 1
+      ops.push({
+        p: [...path, start.row, start.column],
+        [opType]: lines[0],
+      })
+      while (current < end.row) {
+        if (opType === ShareDBOPTypes.SI && doc.data.lines[current] === undefined) {
+          insertOps.push({
+            p: [...path, end.row],
+            [ShareDBOPTypes.LI]: lines[current - start.row],
+          })
+        } else if (opType === ShareDBOPTypes.SD && doc.data.lines[current] === lines[current - start.row]) {
+          deleteOps.unshift({
+            p: [...path, end.row],
+            [ShareDBOPTypes.LD]: lines[current - start.row],
+          })
+        }
+        current += 1
+      }
+      if (opType === ShareDBOPTypes.SI && doc.data.lines[end.row] === undefined) {
+        insertOps.push({
+          p: [...path, end.row],
+          [ShareDBOPTypes.LI]: lines[end.row - start.row],
+        })
+      } else if (opType === ShareDBOPTypes.SD && doc.data.lines[end.row] === lines[end.row - start.row]) {
+        deleteOps.unshift({
+          p: [...path, end.row],
+          [ShareDBOPTypes.LD]: lines[end.row - start.row],
+        })
+      } else {
+        ops.push({
+          p: [...path, end.row, 0],
+          [opType]: lines[end.row - start.row],
+        })
+      }
+      break;
   }
 
   return [...insertOps, ...ops, ...deleteOps]
@@ -88,7 +136,7 @@ class CollabEditor {
     this.shouldHandleChange = true
   }
 
-  setEditorValueChangeHandler(doc) {
+  setEditorValueChangeHandler = (doc) => {
     const {
       editSession,
     } = this
@@ -102,29 +150,31 @@ class CollabEditor {
     })
   }
 
-  setEditorValue(doc) {
+  setEditorValue = (doc) => {
     return (op, fromLocal) => {
       const {
         editSession,
       } = this
 
+      console.log(this)
+
       if (!fromLocal) {
         const {
           data: {
-            text,
+            lines,
           },
         } = doc
         this.shouldHandleChange = false
-        editSession.setValue(text.join('\n'))
+        editSession.setValue(lines.join('\n'))
         this.shouldHandleChange = true
       }
     }
   }
 
-  loadShareDBDoc(docPath) {
+  loadShareDBDoc = (docId) => {
     return new Promise(async (res) => {
       const shareDBDoc = await loadShareDBDoc({
-        docPath,
+        docId,
         on: {
           op: this.setEditorValue,
         },
@@ -133,6 +183,7 @@ class CollabEditor {
 
       this.setEditorValue(shareDBDoc)()
       this.setEditorValueChangeHandler(shareDBDoc)
+
 
       res(shareDBDoc)
     })
