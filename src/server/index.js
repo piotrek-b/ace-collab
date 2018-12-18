@@ -5,19 +5,18 @@ const ShareDB = require('sharedb')
 const WebSocket = require('ws')
 const WebSocketJSONStream = require('websocket-json-stream')
 
-const backend = new ShareDB()
+const shareDB = new ShareDB()
 
 // Create initial document then fire callback
 const createDoc = () => (
   new Promise((res) => {
     const id = uuid()
-    const connection = backend.connect()
+    const connection = shareDB.connect()
     const doc = connection.get('codes', id)
 
     doc.fetch((err) => {
       if (err) throw err
       if (doc.type === null) {
-        console.log('null')
         doc.create({ lines: [''] }, () => res(id))
         return
       }
@@ -27,31 +26,30 @@ const createDoc = () => (
 )
 
 const startServer = () => {
-  // Create a web server to serve files and listen to WebSocket connections
-  const app = express()
-  const server = http.createServer(app)
+  const expressInstance = express()
+  const httpServer = http.createServer(expressInstance)
 
-  app.use(function(req, res, next) {
+  expressInstance.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
   });
   
 
-  app.post('/code', async (req, res) => {
+  expressInstance.post('/code', async (req, res) => {
     const id = await createDoc()
 
     res.send(JSON.stringify({ id }))
   })
 
-  // Connect any incoming WebSocket connection to ShareDB
-  const wss = new WebSocket.Server({ server })
-  wss.on('connection', (ws) => {
-    const stream = new WebSocketJSONStream(ws)
-    backend.listen(stream)
+  const webSocketServer = new WebSocket.Server({ server:httpServer })
+
+  webSocketServer.on('connection', (ws) => {
+    const webSocketJSONStream = new WebSocketJSONStream(ws)
+    shareDB.listen(webSocketJSONStream)
   })
 
-  server.listen(3000)
+  httpServer.listen(3000)
   console.log('Listening on http://localhost:3000')
 }
 
