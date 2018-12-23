@@ -13,8 +13,6 @@ const {
 const ShareDBOPTypes = {
   SI: 'si',
   SD: 'sd',
-  LI: 'li',
-  LD: 'ld',
 }
 
 const AceActions = {
@@ -27,39 +25,28 @@ const mapAceActionToShareDBOpType = {
   [AceActions.REMOVE]: ShareDBOPTypes.SD,
 }
 
-const mapAceOpToShareDBOp = (doc, path) => ({
+const reduceLines = (total, line) => {
+  return `${total}\n${line}`
+}
+
+
+const mapAceOpToShareDBOp = (aceDoc, path) => ({
   action,
-  start,
-  end,
+  start: {
+    column,
+    row,
+  },
   lines,
 }) => {
   const opType = mapAceActionToShareDBOpType[action]
-  const ops = []
-  const insertOps = []
-  const deleteOps = []
-  let curr = start.row
+  let startIndex = aceDoc.positionToIndex({ row, column })
 
-  while (curr <= end.row) {
-    if (opType === ShareDBOPTypes.SI && doc.data.lines[curr] === undefined) {
-      insertOps.push({
-        p: [...path, curr],
-        [ShareDBOPTypes.LI]: lines[curr - start.row],
-      })
-    } else if (opType === ShareDBOPTypes.SD && lines[curr - start.row] === doc.data.lines[curr]) {
-      deleteOps.unshift({
-        p: [...path, curr],
-        [ShareDBOPTypes.LD]: doc.data.lines[curr],
-      })
-    } else {
-      ops.push({
-        p: [...path, curr, start.column],
-        [opType]: lines[curr - start.row],
-      })
-    }
-    curr += 1
-  }
+  const text = lines.length === 0 ? lines[0] : lines.reduce(reduceLines)
   
-  return [...insertOps, ...ops, ...deleteOps]
+  return {
+    p: [...path, startIndex],
+    [opType]: text,
+  }
 }
 
 const configSchema = {
@@ -68,6 +55,7 @@ const configSchema = {
   theme: '',
 }
 
+/* Class, which connects Ace functionality with shareDB functinality */
 class CollabEditor {
   constructor(config = configSchema) {
     const {
@@ -76,65 +64,77 @@ class CollabEditor {
       theme,
     } = config
 
-    this.document = new Document('')
+    this.aceDoc = new Document('')
     this.virtualRenderer = new VirtualRenderer(anchorDOM)
-    this.editSession = new EditSession(this.document)
+    this.editSession = new EditSession(this.aceDoc)
     this.editor = new Editor(this.virtualRenderer, this.editSession)
+
+    this.shareDBDoc = null
 
     this.editor.setTheme(theme)
     this.editSession.setMode(mode)
 
     // Flag indicating programative editSession value change
-    this.shouldHandleChange = true
+    this.suspenseChangeHandler = false
   }
 
-  setEditorValueChangeHandler = (doc) => {
+  getAceDoc = () => this.aceDoc
+  getVirtualRenderer = () => this.virtualRenderer
+  getEditSession = () => this.editSession
+  getEditor = () => this.editor
+
+  onEditorValueChange = (aceOp) => {
+    const {
+      aceDoc,
+      suspenseChangeHandler,
+      shareDBDoc,
+    } = this
+    if (!suspenseChangeHandler) {
+      const shareDBOp = mapAceOpToShareDBOp(aceDoc, ['code'])(aceOp)
+      shareDBDoc.submitOp(shareDBOp)
+    }
+  }
+
+  setEditorValueChangeHandler = () => {
     const {
       editSession,
+      onEditorValueChange,
     } = this
-    editSession.on('change', (aceOp) => {
-      if (this.shouldHandleChange) {
-        const shareDBOps = mapAceOpToShareDBOp(doc, ['lines'])(aceOp)
-        console.log('aceOp', aceOp)
-        console.log('shareDBOps', shareDBOps)
-        doc.submitOp(shareDBOps)
-      }
-    })
+    editSession.on('change', onEditorValueChange)
   }
 
-  setEditorValue = (doc) => {
+  setEditorValue = (shareDBDoc) => {
     return (op, fromLocal) => {
       const {
         editSession,
       } = this
 
-      console.log(this)
-
       if (!fromLocal) {
         const {
           data: {
-            lines,
+            code,
           },
-        } = doc
-        this.shouldHandleChange = false
-        editSession.setValue(lines.join('\n'))
-        this.shouldHandleChange = true
+        } = shareDBDoc
+        this.suspenseChangeHandler = true
+        editSession.setValue(code)
+        this.suspenseChangeHandler = false
       }
     }
   }
 
-  loadShareDBDoc = (docId) => {
+  loadShareDBDoc = (shareDBDocId) => {
     return new Promise(async (res) => {
       const shareDBDoc = await loadShareDBDoc({
-        docId,
+        docId: shareDBDocId,
         on: {
           op: this.setEditorValue,
         },
         subscribe: () => {},
       })
 
+      this.shareDBDoc = shareDBDoc
       this.setEditorValue(shareDBDoc)()
-      this.setEditorValueChangeHandler(shareDBDoc)
+      this.setEditorValueChangeHandler()
 
 
       res(shareDBDoc)

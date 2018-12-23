@@ -7,7 +7,6 @@ const WebSocketJSONStream = require('websocket-json-stream')
 
 const shareDB = new ShareDB()
 
-// Create initial document then fire callback
 const createDoc = () => (
   new Promise((res) => {
     const id = uuid()
@@ -17,7 +16,7 @@ const createDoc = () => (
     doc.fetch((err) => {
       if (err) throw err
       if (doc.type === null) {
-        doc.create({ lines: [''] }, () => res(id))
+        doc.create({ code: '' }, () => res(id))
         return
       }
       res(id)
@@ -29,12 +28,11 @@ const startServer = () => {
   const expressInstance = express()
   const httpServer = http.createServer(expressInstance)
 
-  expressInstance.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
+  expressInstance.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*')
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
+    next()
   });
-  
 
   expressInstance.post('/code', async (req, res) => {
     const id = await createDoc()

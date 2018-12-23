@@ -24,7 +24,7 @@ const aceCollab = (config = configSchema) => (
 
 aceCollab({
   anchorDOM: document.querySelector('#editor'),
-  docId: '8d939b92-1729-4e51-a9b8-e37bc4ce8887',
+  docId: '31116ba6-33fe-46d2-888a-aaf7eba97e17',
   mode: 'ace/mode/csharp',
   theme: 'ace/theme/monokai',
 })
