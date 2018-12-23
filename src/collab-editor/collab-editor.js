@@ -55,7 +55,16 @@ const configSchema = {
   theme: '',
 }
 
-/* Class, which connects Ace functionality with shareDB functinality */
+/** 
+* Class, which connects Ace functionality with shareDB functinality
+*
+* @typedef CollabEditor
+* @type {object}
+* @property {Document} aceDoc
+* @property {VirtualRenderer} virtualRenderer
+* @property {EditSession} editSession
+* @property {Editor} editor
+*/
 class CollabEditor {
   constructor(config = configSchema) {
     const {
@@ -64,18 +73,23 @@ class CollabEditor {
       theme,
     } = config
 
+    // Ace
+
     this.aceDoc = new Document('')
     this.virtualRenderer = new VirtualRenderer(anchorDOM)
     this.editSession = new EditSession(this.aceDoc)
     this.editor = new Editor(this.virtualRenderer, this.editSession)
-
-    this.shareDBDoc = null
 
     this.editor.setTheme(theme)
     this.editSession.setMode(mode)
 
     // Flag indicating programative editSession value change
     this.suspenseChangeHandler = false
+
+
+    // ShareDB
+
+    this.shareDBDoc = null
   }
 
   getAceDoc = () => this.aceDoc
