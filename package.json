@@ -9,7 +9,9 @@
     "start": "webpack-dev-server --hot --inline --mode=development",
     "start-server": "node ./src/server/index.js",
     "lint": "./node_modules/.bin/eslint .",
-    "lintfix": "./node_modules/.bin/eslint --fix ."
+    "lintfix": "./node_modules/.bin/eslint --fix .",
+    "transpile": "babel src -d lib",
+    "prepublish": "npm run transpile"
   },
   "author": "Piotr Bechcicki",
   "license": "MIT",

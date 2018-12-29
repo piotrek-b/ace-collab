@@ -5,6 +5,7 @@ sh.exe.stackdump
 webpack.config.js
 yarn.lock
 yarn-error.log
+
 src
 public
 build

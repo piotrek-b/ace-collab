@@ -3,3 +3,4 @@ build
 .idea
 sh.exe.stackdump
 yarn-error.log
+lib
