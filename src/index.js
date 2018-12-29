@@ -23,11 +23,11 @@ const aceCollabConfigSchema = {
  * Setup collaborative Ace Editor instance.
  *
  * @async
- * @function aceCollab
+ * @function AceCollab
  * @param {AceCollabConfigSchema} config - config to be provided for the CollabEditor.
  * @return {Promise<CollabEditor>} Collaborative Ace Editor instance.
  */
-const aceCollab = (config = aceCollabConfigSchema) => (
+const AceCollab = (config = aceCollabConfigSchema) => (
   new Promise(async (res) => {
     const {
       docId,
@@ -41,8 +41,4 @@ const aceCollab = (config = aceCollabConfigSchema) => (
   })
 )
 
-aceCollab({
-  anchorDOM: document.querySelector('#editor'),
-  mode: 'ace/mode/csharp',
-  theme: 'ace/theme/monokai',
-})
+export default AceCollab
