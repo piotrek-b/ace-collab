@@ -1,6 +1,6 @@
-/node_modules/*
-/build/*
-/lib/*
+node_modules
+build
+lib
 .idea
 sh.exe.stackdump
 yarn-error.log

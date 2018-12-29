@@ -1,9 +1,9 @@
-/src/*
-/public/*
-/build/*
-/node_modules/*
-/.idea/
-/node_modules/.bin
+src
+public
+build
+node_modules
+.idea
+
 .eslintrc.js
 .babelrc
 .eslintignore
