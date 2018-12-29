@@ -8,6 +8,7 @@ module.exports = {
   "rules": {
     "arrow-parens": ["error", "always"],
     "comma-dangle": ["error", "always-multiline"],
-    "semi": ["off"]
+    "semi": ["error", "never"],
+    "indent": ["error", 2],
   }
 }

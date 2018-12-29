@@ -1,6 +1,4 @@
 import AceBag from './utils/ace-bag'
-// Map paths etc.
-import 'ace-builds/webpack-resolver'
 import loadShareDBDoc from '../client'
 
 const {
@@ -25,9 +23,7 @@ const mapAceActionToShareDBOpType = {
   [AceActions.REMOVE]: ShareDBOPTypes.SD,
 }
 
-const reduceLines = (total, line) => {
-  return `${total}\n${line}`
-}
+const reduceLines = (total, line) => `${total}\n${line}`
 
 
 const mapAceOpToShareDBOp = (aceDoc, path) => ({
@@ -39,24 +35,33 @@ const mapAceOpToShareDBOp = (aceDoc, path) => ({
   lines,
 }) => {
   const opType = mapAceActionToShareDBOpType[action]
-  let startIndex = aceDoc.positionToIndex({ row, column })
+  const startIndex = aceDoc.positionToIndex({ row, column })
 
   const text = lines.length === 0 ? lines[0] : lines.reduce(reduceLines)
-  
+
   return {
     p: [...path, startIndex],
     [opType]: text,
   }
 }
 
-const configSchema = {
+/**
+ * Config provided to collaborative Ace Editor constructor.
+ *
+ * @typedef CollabEditorConfigSchema
+ * @type {object}
+ * @property {HTMLElement} anchorDOM - a DOM element to display the editor on.
+ * @property {mode} age - ace editor's mode.
+ * @property {theme} theme - ace editor's theme.
+ */
+const collabEditorConfigSchema = {
   anchorDOM: null,
   mode: '',
   theme: '',
 }
 
-/** 
-* Class, which connects Ace functionality with shareDB functinality
+/**
+* Class, which connects Ace functionality with shareDB functionality
 *
 * @typedef CollabEditor
 * @type {object}
@@ -66,63 +71,49 @@ const configSchema = {
 * @property {Editor} editor
 */
 class CollabEditor {
-  constructor(config = configSchema) {
+  constructor(config = collabEditorConfigSchema) {
     const {
       anchorDOM,
       mode,
       theme,
     } = config
 
-    // Ace
-
+    // Ace editor setup
     this.aceDoc = new Document('')
     this.virtualRenderer = new VirtualRenderer(anchorDOM)
     this.editSession = new EditSession(this.aceDoc)
     this.editor = new Editor(this.virtualRenderer, this.editSession)
 
+    // Apply theme and mode
     this.editor.setTheme(theme)
     this.editSession.setMode(mode)
 
-    // Flag indicating programative editSession value change
+    // Setup flag indicating programative editSession value change
     this.suspenseChangeHandler = false
 
-
     // ShareDB
-
     this.shareDBDoc = null
+
+    // Method bindings
+    this.onEditorValueChange = this.onEditorValueChange.bind(this)
+    this.setEditorValueChangeHandler = this.setEditorValueChangeHandler.bind(this)
+    this.setEditorValue = this.setEditorValue.bind(this)
+    this.setShareDBDoc = this.setShareDBDoc.bind(this)
   }
 
-  getAceDoc = () => this.aceDoc
-  getVirtualRenderer = () => this.virtualRenderer
-  getEditSession = () => this.editSession
-  getEditor = () => this.editor
-
-  onEditorValueChange = (aceOp) => {
-    const {
-      aceDoc,
-      suspenseChangeHandler,
-      shareDBDoc,
-    } = this
-    if (!suspenseChangeHandler) {
-      const shareDBOp = mapAceOpToShareDBOp(aceDoc, ['code'])(aceOp)
-      shareDBDoc.submitOp(shareDBOp)
+  onEditorValueChange(aceOp) {
+    if (!this.suspenseChangeHandler) {
+      const shareDBOp = mapAceOpToShareDBOp(this.aceDoc, ['code'])(aceOp)
+      this.shareDBDoc.submitOp(shareDBOp)
     }
   }
 
-  setEditorValueChangeHandler = () => {
-    const {
-      editSession,
-      onEditorValueChange,
-    } = this
-    editSession.on('change', onEditorValueChange)
+  setEditorValueChangeHandler() {
+    this.editSession.on('change', this.onEditorValueChange)
   }
 
-  setEditorValue = (shareDBDoc) => {
+  setEditorValue(shareDBDoc) {
     return (op, fromLocal) => {
-      const {
-        editSession,
-      } = this
-
       if (!fromLocal) {
         const {
           data: {
@@ -130,13 +121,13 @@ class CollabEditor {
           },
         } = shareDBDoc
         this.suspenseChangeHandler = true
-        editSession.setValue(code)
+        this.editSession.setValue(code)
         this.suspenseChangeHandler = false
       }
     }
   }
 
-  loadShareDBDoc = (shareDBDocId) => {
+  setShareDBDoc(shareDBDocId) {
     return new Promise(async (res) => {
       const shareDBDoc = await loadShareDBDoc({
         docId: shareDBDocId,

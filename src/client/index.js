@@ -4,8 +4,8 @@ import WebSocket from 'reconnecting-websocket'
 import isEmpty from 'lodash/isEmpty'
 
 // Open WebSocket connection to ShareDB server
-const socket = new WebSocket('ws://localhost:3000');
-const connection = new sharedb.Connection(socket);
+const socket = new WebSocket('ws://localhost:3000')
+const connection = new sharedb.Connection(socket)
 
 const configSchema = {
   docId: '',

@@ -32,7 +32,7 @@ const startServer = () => {
     res.header('Access-Control-Allow-Origin', '*')
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
     next()
-  });
+  })
 
   expressInstance.post('/code', async (req, res) => {
     const id = await createDoc()
@@ -40,7 +40,7 @@ const startServer = () => {
     res.send(JSON.stringify({ id }))
   })
 
-  const webSocketServer = new WebSocket.Server({ server:httpServer })
+  const webSocketServer = new WebSocket.Server({ server: httpServer })
 
   webSocketServer.on('connection', (ws) => {
     const webSocketJSONStream = new WebSocketJSONStream(ws)
