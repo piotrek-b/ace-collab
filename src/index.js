@@ -1,6 +1,4 @@
 import '@babel/polyfill'
-// Map paths etc.
-import 'ace-builds/webpack-resolver'
 
 import CollabEditor from './collab-editor/collab-editor'
 

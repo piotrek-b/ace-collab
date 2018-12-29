@@ -1,4 +1,6 @@
 import AceBag from './utils/ace-bag'
+// Map paths etc.
+import 'ace-builds/webpack-resolver'
 import loadShareDBDoc from '../client'
 
 const {

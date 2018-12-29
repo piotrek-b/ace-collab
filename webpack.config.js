@@ -1,15 +1,16 @@
 const path = require('path')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
   entry: {
-    app: './src/index.js',
+    app: path.join(__dirname, 'src', 'index.js'),
   },
   output: {
-    path: path.resolve(__dirname, 'build'),
+    path: path.join(__dirname, 'build'),
     filename: 'app.bundle.js',
   },
   devServer: {
-    contentBase: './build',
+    contentBase: path.join(__dirname, 'public'),
     hot: true,
   },
   module: {
@@ -19,4 +20,10 @@ module.exports = {
       loader: 'babel-loader',
     }],
   },
+  plugins: [
+    new HtmlWebpackPlugin({
+      title: 'AceCollab - example',
+      template: path.join(__dirname, 'public', 'index.html'),
+    }),
+  ],
 }
