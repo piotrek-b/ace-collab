@@ -1,11 +1,11 @@
 .eslintsrc.js
+.eslintignore
 .gitignore
 package-lock.json
 sh.exe.stackdump
 webpack.config.js
 yarn.lock
 yarn-error.log
-
 src
 public
 build
