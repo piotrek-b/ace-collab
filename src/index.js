@@ -1,6 +1,16 @@
 import '@babel/polyfill'
 
 import CollabEditor from './collab-editor/collab-editor'
+/**
+ * Server info.
+ *
+ * @typedef ServerInfo
+ * @type {object}
+ * @property {string} docId - id of the document.
+ * @property {string} host - server host.
+ * @property {number} port - server port.
+ * @property {boolean} ssl - indicates if server uses ssl.
+ */
 
 /**
 * Config provided to setup collaborative Ace Editor.
@@ -8,15 +18,20 @@ import CollabEditor from './collab-editor/collab-editor'
 * @typedef AceCollabConfigSchema
 * @type {object}
 * @property {HTMLElement} anchorDOM - a DOM element to display the editor on.
-* @property {docId} name - shareDB doc id to connect with.
 * @property {mode} age - ace editor's mode.
 * @property {theme} theme - ace editor's theme.
+* @property {ServerInfo} server
 */
 const aceCollabConfigSchema = {
   anchorDOM: null,
-  docId: '',
   mode: '',
   theme: '',
+  server: {
+    docId: '',
+    host: '',
+    port: '',
+    ssl: false,
+  },
 }
 
 /**
@@ -30,12 +45,12 @@ const aceCollabConfigSchema = {
 const AceCollab = (config = aceCollabConfigSchema) => (
   new Promise(async (res) => {
     const {
-      docId,
+      server,
       ...configRest
     } = config
 
     const editor = new CollabEditor(configRest)
-    await editor.setShareDBDoc(docId)
+    await editor.setShareDBDoc(server)
 
     res(editor)
   })

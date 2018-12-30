@@ -3,16 +3,18 @@ import sharedb from 'sharedb/lib/client'
 import WebSocket from 'reconnecting-websocket'
 import isEmpty from 'lodash/isEmpty'
 
-// Open WebSocket connection to ShareDB server
-const socket = new WebSocket('ws://localhost:3000')
-const connection = new sharedb.Connection(socket)
 
 const configSchema = {
-  docId: '',
   on: {
     op: () => () => {},
   },
   subscribe: () => () => {},
+  server: {
+    docId: '',
+    host: '',
+    port: '',
+    ssl: false,
+  },
 }
 
 const loadShareDBDoc = (config = configSchema) => (
@@ -21,14 +23,27 @@ const loadShareDBDoc = (config = configSchema) => (
       on,
       subscribe,
     } = config
+    const {
+      server,
+    } = config
+    const {
+      host,
+      port,
+      ssl,
+    } = server
     let {
       docId,
-    } = config
+    } = server
+    const protocolEnd = ssl ? 's' : ''
+
     if (isEmpty(docId)) {
-      const response = await axios.post('http://localhost:3000/code')
+      const response = await axios.post(`http${protocolEnd}://${host}:${port}/code`)
       docId = response.data.id
     }
-    console.log(docId)
+    // Open WebSocket connection to ShareDB server
+    const socket = new WebSocket(`ws${protocolEnd}://${host}:${port}`)
+    const connection = new sharedb.Connection(socket)
+
     const doc = connection.get('codes', docId)
 
     doc.subscribe(subscribe(doc))

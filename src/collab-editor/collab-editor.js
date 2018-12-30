@@ -129,13 +129,13 @@ class CollabEditor {
     }
   }
 
-  setShareDBDoc(shareDBDocId) {
+  setShareDBDoc(server) {
     return new Promise(async (res) => {
       const shareDBDoc = await loadShareDBDoc({
-        docId: shareDBDocId,
         on: {
           op: this.setEditorValue,
         },
+        server,
         subscribe: () => {},
       })
 
