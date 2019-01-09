@@ -2,6 +2,7 @@ import AceBag from './utils/ace-bag'
 // Map paths etc.
 import 'ace-builds/webpack-resolver'
 import loadShareDBDoc from '../client'
+import { MessageTypes } from '../../consts'
 
 const {
   Document,
@@ -53,8 +54,9 @@ const mapAceOpToShareDBOp = (aceDoc, path) => ({
  * @typedef CollabEditorConfigSchema
  * @type {object}
  * @property {HTMLElement} anchorDOM - a DOM element to display the editor on.
- * @property {mode} age - ace editor's mode.
- * @property {theme} theme - ace editor's theme.
+ * @property {string} age - ace editor's mode.
+ * @property {string} theme - ace editor's theme.
+ * @property {string} userNam
  */
 const collabEditorConfigSchema = {
   anchorDOM: null,
@@ -78,6 +80,7 @@ class CollabEditor {
       anchorDOM,
       mode,
       theme,
+      userName,
     } = config
 
     // Ace editor setup
@@ -95,6 +98,11 @@ class CollabEditor {
 
     // ShareDB
     this.shareDBDoc = null
+
+    // Chat
+    this.history = []
+    this.socket = null
+    this.userName = userName
 
     // Method bindings
     this.onEditorValueChange = this.onEditorValueChange.bind(this)
@@ -146,6 +154,32 @@ class CollabEditor {
 
       res(shareDBDoc)
     })
+  }
+
+  initWSChatConnection(id) {
+    this.history = []
+    this.socket = new WebSocket(`ws://localhost:3000/ui/${id}`)
+
+    this.socket.addEventListener('open', () => {
+      this.socket.send(JSON.stringify({
+        type: 'USER_JOINED',
+        payload: this.userName,
+      }))
+    })
+
+    this.socket.addEventListener('message', (message) => {
+      const messageData = JSON.parse(message.data)
+
+      if (messageData.type === MessageTypes.HISTORY) {
+        this.history = [...messageData.payload]
+      } else {
+        this.history.push(messageData)
+      }
+    })
+  }
+
+  sendChatMessage(message) {
+    this.socket.send(JSON.stringify({ type: MessageTypes.MESSAGE, payload: message }))
   }
 }
 

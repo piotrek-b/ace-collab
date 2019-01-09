@@ -11,7 +11,9 @@ module.exports = {
   },
   devServer: {
     contentBase: path.join(__dirname, 'public'),
-    hot: true,
+    headers: { 'Access-Control-Allow-Origin': '*' },
+    https: false,
+    disableHostCheck: true,
   },
   module: {
     rules: [{

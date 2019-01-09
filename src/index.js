@@ -18,14 +18,16 @@ import CollabEditor from './collab-editor/collab-editor'
 * @typedef AceCollabConfigSchema
 * @type {object}
 * @property {HTMLElement} anchorDOM - a DOM element to display the editor on.
-* @property {mode} age - ace editor's mode.
-* @property {theme} theme - ace editor's theme.
+* @property {string} age - ace editor's mode.
+* @property {string} theme - ace editor's theme.
+* @property {string} userName
 * @property {ServerInfo} server
 */
 const aceCollabConfigSchema = {
   anchorDOM: null,
   mode: '',
   theme: '',
+  userName: '',
   server: {
     docId: '',
     host: '',
@@ -50,7 +52,8 @@ const AceCollab = (config = aceCollabConfigSchema) => (
     } = config
 
     const editor = new CollabEditor(configRest)
-    await editor.setShareDBDoc(server)
+    const doc = await editor.setShareDBDoc(server)
+    editor.initWSChatConnection(doc.id)
 
     res(editor)
   })

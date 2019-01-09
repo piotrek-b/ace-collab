@@ -41,7 +41,7 @@ const loadShareDBDoc = (config = configSchema) => (
       docId = response.data.id
     }
     // Open WebSocket connection to ShareDB server
-    const socket = new WebSocket(`ws${protocolEnd}://${host}:${port}`)
+    const socket = new WebSocket(`ws${protocolEnd}://${host}:${port}/sharedb`)
     const connection = new sharedb.Connection(socket)
 
     const doc = connection.get('codes', docId)
