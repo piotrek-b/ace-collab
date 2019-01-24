@@ -120,4 +120,6 @@ const startServer = () => {
   httpServer.listen(3000)
 }
 
+startServer()
+
 module.exports = startServer
