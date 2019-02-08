@@ -1,6 +1,7 @@
 import AceBag from './utils/ace-bag'
 // Map paths etc.
 import 'ace-builds/webpack-resolver'
+import '@babel/polyfill'
 import loadShareDBDoc from '../client'
 
 const {
@@ -101,9 +102,7 @@ class CollabEditor {
     this.onEditorValueChange = this.onEditorValueChange.bind(this)
     this.setEditorValueChangeHandler = this.setEditorValueChangeHandler.bind(this)
     this.setEditorValue = this.setEditorValue.bind(this)
-    this.setShareDBDoc = this.setShareDBDoc.bind(this)
     this.init = this.init.bind(this)
-    this.initShareDBDoc = this.initShareDBDoc.bind(this)
   }
 
   onEditorValueChange(aceOp) {
@@ -132,14 +131,7 @@ class CollabEditor {
     }
   }
 
-  init(serverConfig) {
-    return new Promise(async (resolve) => {
-      await this.setShareDBDoc(serverConfig)
-      resolve()
-    })
-  }
-
-  initShareDBDoc(server) {
+  init(server) {
     return new Promise(async (res) => {
       const shareDBDoc = await loadShareDBDoc({
         on: {

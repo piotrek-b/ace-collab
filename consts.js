@@ -3,4 +3,7 @@ export const MessageTypes = {
   MESSAGE: 'MESSAGE',
   USER_JOINED: 'USER_JOINED',
   USER_LEFT: 'USER_LEFT',
+  GRANTED: 'GRANTED',
+  DENIED: 'DENIED',
+  ACCESS: 'ACCESS',
 }

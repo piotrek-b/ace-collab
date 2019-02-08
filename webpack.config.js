@@ -1,10 +1,12 @@
 const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
+const webpack = require('webpack')
 
 module.exports = {
   entry: {
     app: path.join(__dirname, 'src', 'index.js'),
   },
+  devtool: 'eval-source-map',
   output: {
     path: path.join(__dirname, 'build'),
     filename: 'app.bundle.js',
