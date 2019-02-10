@@ -55,45 +55,21 @@ const saveToken = (token, docId, username) => {
   }
 }
 
-const loadShareDBDoc = (config = configSchema) => (
-  new Promise(async (res, rej) => {
+const onReadyDefault = (config, socket) => {
+  return new Promise((res, rej) => {
     const {
       on,
       subscribe,
-    } = config
-    const {
       server,
     } = config
     const {
       host,
       port,
-      ssl,
-    } = server
-    let {
       username,
       docId,
+      ssl,
     } = server
     const protocolEnd = ssl ? 's' : ''
-    let token
-    username = window.prompt('username')
-    docId = window.prompt('getDocId')
-
-    if (isEmpty(docId)) {
-      const response = await axios.post(`http${protocolEnd}://${host}:${port}/code`)
-      docId = response.data.id
-      token = response.data.token
-    } else {
-      token = getToken(docId, username)
-    }
-
-    // Open WebSocket connection to ShareDB server
-    let socket
-
-    if (token) {
-      socket = new WebSocket(`ws${protocolEnd}://${host}:${port}/auth?username=${username}&token=${token}`)
-    } else {
-      socket = new WebSocket(`ws${protocolEnd}://${host}:${port}/auth?username=${username}`)
-    }
 
     socket.addEventListener('message', (msg) => {
       const message = JSON.parse(msg.data)
@@ -127,6 +103,43 @@ const loadShareDBDoc = (config = configSchema) => (
       }
     })
   })
-)
+}
+
+const loadShareDBDoc = async (config = configSchema, onReady = onReadyDefault) => {
+  const {
+    server,
+  } = config
+  const {
+    host,
+    port,
+    ssl,
+    username,
+  } = server
+  let {
+    docId,
+  } = server
+  const protocolEnd = ssl ? 's' : ''
+
+  let token
+
+  if (isEmpty(docId)) {
+    const response = await axios.post(`http${protocolEnd}://${host}:${port}/code`)
+    docId = response.data.id
+    token = response.data.token
+  } else {
+    token = getToken(docId, username)
+  }
+
+  // Open WebSocket connection to ShareDB server
+  let socket
+
+  if (token) {
+    socket = new WebSocket(`ws${protocolEnd}://${host}:${port}/auth?username=${username}&token=${token}`)
+  } else {
+    socket = new WebSocket(`ws${protocolEnd}://${host}:${port}/auth?username=${username}`)
+  }
+
+  return onReady(socket, config)
+}
 
 export default loadShareDBDoc
