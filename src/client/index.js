@@ -139,7 +139,7 @@ const loadShareDBDoc = async (config = configSchema, onReady = onReadyDefault) =
     socket = new WebSocket(`ws${protocolEnd}://${host}:${port}/auth?username=${username}`)
   }
 
-  return onReady(socket, config)
+  return onReady(config, socket)
 }
 
 export default loadShareDBDoc
