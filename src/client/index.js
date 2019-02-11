@@ -101,7 +101,11 @@ const onReady = (config, docId, socket, askForAccess) => (
           doc.on(event, on[event](doc))
         })
 
-        doc.on('load', () => res(doc))
+        doc.on('load', () => res({
+          doc,
+          username,
+          token: message.payload,
+        }))
       } else if (message.type === MessageTypes.DENIED) {
         rej()
       }
