@@ -55,8 +55,13 @@ const saveToken = (token, docId, username) => {
   }
 }
 
-const onReadyDefault = (config, socket) => {
-  return new Promise((res, rej) => {
+const defaultAskForAccess = (message) => {
+  const accessGranted = window.confirm(message.payload)
+  return accessGranted
+}
+
+const onReady = (config, docId, socket, askForAccess) => (
+  new Promise((res, rej) => {
     const {
       on,
       subscribe,
@@ -66,18 +71,17 @@ const onReadyDefault = (config, socket) => {
       host,
       port,
       username,
-      docId,
       ssl,
     } = server
     const protocolEnd = ssl ? 's' : ''
 
-    socket.addEventListener('message', (msg) => {
+    socket.addEventListener('message', async (msg) => {
       const message = JSON.parse(msg.data)
 
       if (message.type === MessageTypes.ACCESS) {
-        const result = window.confirm(message.payload)
+        const accessGranted = await askForAccess(message)
 
-        if (result) {
+        if (accessGranted) {
           socket.send(JSON.stringify({ type: MessageTypes.GRANTED }))
         } else {
           socket.send(JSON.stringify({ type: MessageTypes.DENIED }))
@@ -103,9 +107,9 @@ const onReadyDefault = (config, socket) => {
       }
     })
   })
-}
+)
 
-const loadShareDBDoc = async (config = configSchema, onReady = onReadyDefault) => {
+const loadShareDBDoc = async (config = configSchema, askForAccess = defaultAskForAccess) => {
   const {
     server,
   } = config
@@ -139,7 +143,7 @@ const loadShareDBDoc = async (config = configSchema, onReady = onReadyDefault) =
     socket = new WebSocket(`ws${protocolEnd}://${host}:${port}/auth?username=${username}`)
   }
 
-  return onReady(config, socket)
+  return onReady(config, docId, socket, askForAccess)
 }
 
 export default loadShareDBDoc

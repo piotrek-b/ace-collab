@@ -131,7 +131,7 @@ class CollabEditor {
     }
   }
 
-  init(server, onReady) {
+  init(server, askForAccess) {
     return new Promise(async (res) => {
       const shareDBDoc = await loadShareDBDoc({
         on: {
@@ -139,7 +139,7 @@ class CollabEditor {
         },
         server,
         subscribe: () => {},
-      }, onReady)
+      }, askForAccess)
 
       this.shareDBDoc = shareDBDoc
       this.setEditorValue(shareDBDoc)()

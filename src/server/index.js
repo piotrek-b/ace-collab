@@ -244,6 +244,7 @@ const shareDBWsConnection = async (ws, request) => {
     shareDB.listen(webSocketJSONStream)
   } catch (error) {
     console.log(error)
+    ws.terminate()
   }
 }
 
