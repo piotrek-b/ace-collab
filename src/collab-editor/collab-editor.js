@@ -132,21 +132,25 @@ class CollabEditor {
   }
 
   init(server, askForAccess) {
-    return new Promise(async (res) => {
-      const { doc, username, token } = await loadShareDBDoc({
-        on: {
-          op: this.setEditorValue,
-        },
-        server,
-        subscribe: () => {},
-      }, askForAccess)
+    return new Promise(async (res, rej) => {
+      try {
+        const { doc, username, token } = await loadShareDBDoc({
+          on: {
+            op: this.setEditorValue,
+          },
+          server,
+          subscribe: () => {},
+        }, askForAccess)
 
-      this.shareDBDoc = doc
-      this.setEditorValue(doc)()
-      this.setEditorValueChangeHandler()
+        this.shareDBDoc = doc
+        this.setEditorValue(doc)()
+        this.setEditorValueChangeHandler()
 
 
-      res({ doc, username, token })
+        res({ doc, username, token })
+      } catch (error) {
+        rej(error)
+      }
     })
   }
 }

@@ -16,12 +16,12 @@ const MessageTypes = {
   ACCESS: 'ACCESS',
 }
 
-let clients = []
+const clients = []
 const histories = {}
-const broadcast = (targetDocId, messageToSend) => clients.forEach(({ client, docId }) => {
-  if (client.readyState === 1) {
+const broadcast = (targetDocId, messageToSend) => clients.forEach(({ chatWSClient, docId }) => {
+  if (chatWSClient.readyState === 1) {
     if (targetDocId === docId) {
-      client.send(JSON.stringify(messageToSend))
+      chatWSClient.send(JSON.stringify(messageToSend))
     }
   }
 })
@@ -33,7 +33,11 @@ const getToken = (req) => {
   return [name, token]
 }
 
-const getDocId = (request) => request.url.split('/')[2]
+const getDocId = (request) => {
+  const { pathname } = url.parse(request.url, true)
+
+  return pathname.split('/')[2]
+}
 
 const allowConnection = (ws, reqToken) => {
   ws.send(JSON.stringify({
@@ -79,7 +83,7 @@ const onAccessGranted = (ws, docId, username, isClientThere, reqToken) => {
   if (!isClientThere) {
     clients.push({
       docId,
-      client: ws,
+      authWSClient: ws,
       token,
     })
   }
@@ -92,7 +96,7 @@ const onAccessGranted = (ws, docId, username, isClientThere, reqToken) => {
   }
 }
 
-const onTokenProvided = (ws, reqToken, docId, username) => new Promise((resolve, reject) => {
+const onTokenProvided = (ws, docId, username, reqToken) => new Promise((resolve, reject) => {
   const client = clients.find((c) => c.token === reqToken)
   const isClientThere = !!client
 
@@ -171,7 +175,7 @@ const authenticate = (ws, request) => {
   const [username, reqToken] = getToken(request)
 
   if (reqToken) {
-    return onTokenProvided(ws, reqToken, docId, username)
+    return onTokenProvided(ws, docId, username, reqToken)
   }
 
   return onTokenNotProvided(ws, docId, username)
@@ -188,16 +192,16 @@ const chatWSConnection = async (ws, request) => {
       .find((c) => c.token === reqToken)
 
     if (!client) {
-      throw new Error()
+      throw new Error('Chat - Client not found')
     }
 
     client.chatWSClient = ws
+    client.docId = docId
 
     if (!histories[docId]) {
       histories[docId] = []
     }
     const history = histories[docId]
-    const index = clients.findIndex((c) => c.token === reqToken)
 
     ws.send(JSON.stringify({ type: MessageTypes.HISTORY, payload: history }))
 
@@ -221,7 +225,6 @@ const chatWSConnection = async (ws, request) => {
       }
       history.push(messageToSend)
       broadcast(docId, messageToSend)
-      clients = clients.filter((c, clientIndex) => clientIndex !== index)
     })
   } catch (error) {
     console.log(error)
@@ -235,7 +238,7 @@ const shareDBWsConnection = async (ws, request) => {
       .find((c) => c.token === reqToken)
 
     if (!client) {
-      throw new Error()
+      throw new Error('ShareDB - Client not found')
     }
 
     client.shareDBWSClient = ws
@@ -266,7 +269,7 @@ const onUpgrade = (wss1, wss2, wss3) => (request, socket, head) => {
   }
 }
 
-const startServer = () => {
+const startServer = (port = 3333) => {
   const expressInstance = express()
   const httpServer = http.createServer(expressInstance)
 
@@ -284,6 +287,7 @@ const startServer = () => {
 
   httpServer.on('upgrade', onUpgrade(wss1, wss2, wss3))
 
-  httpServer.listen(3000)
+  httpServer.listen(port)
 }
+
 module.exports = startServer
