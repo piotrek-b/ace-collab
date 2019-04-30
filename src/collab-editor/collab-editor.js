@@ -56,7 +56,6 @@ const mapAceOpToShareDBOp = (aceDoc, path) => ({
  * @property {HTMLElement} anchorDOM - a DOM element to display the editor on.
  * @property {string} mode - ace editor's mode.
  * @property {string} theme - ace editor's theme.
- * @property {string} userName
  */
 const collabEditorConfigSchema = {
   anchorDOM: null,

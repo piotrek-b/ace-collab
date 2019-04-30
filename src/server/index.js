@@ -290,4 +290,6 @@ const startServer = (port = 3333) => {
   httpServer.listen(port)
 }
 
+startServer()
+
 module.exports = startServer
