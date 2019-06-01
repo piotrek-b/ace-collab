@@ -102,7 +102,7 @@ const onTokenProvided = (ws, docId, username, reqToken) => new Promise((resolve,
 
   if (!isClientThere) {
     denyConnection(ws)
-    reject()
+    reject('There is no client with such token')
   } else {
     client.authWSClient = ws
     resolve(onAccessGranted(ws, docId, username, true, reqToken))
@@ -113,9 +113,10 @@ const onTokenNotProvided = (ws, docId, username) => new Promise(async (resolve, 
   const admin = clients.find((client) => client.isAdmin)
   const isThereAdmin = !!admin
 
+  console.log(isThereAdmin)
   if (!isThereAdmin) {
     denyConnection(ws)
-    reject()
+    reject('Admin not logged in')
   } else {
     const adminClient = admin.authWSClient
 
@@ -124,7 +125,7 @@ const onTokenNotProvided = (ws, docId, username) => new Promise(async (resolve, 
       resolve(onAccessGranted(ws, docId, username))
     } else {
       denyConnection(ws)
-      reject()
+      reject('Access not provided')
     }
   }
 })
@@ -181,7 +182,13 @@ const authenticate = (ws, request) => {
   return onTokenNotProvided(ws, docId, username)
 }
 
-const authWSConnection = async (ws, request) => authenticate(ws, request)
+const authWSConnection = async (ws, request) => {
+  try {
+    await authenticate(ws, request)
+  } catch (error) {
+    console.log(error)
+  }
+}
 
 const chatWSConnection = async (ws, request) => {
   try {
@@ -289,7 +296,5 @@ const startServer = (port = 3333) => {
 
   httpServer.listen(port)
 }
-
-startServer()
 
 module.exports = startServer
