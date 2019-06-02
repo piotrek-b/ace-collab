@@ -1,6 +1,6 @@
 {
   "name": "ace-collab",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -19,6 +19,7 @@
     "@babel/cli": "^7.2.0",
     "@babel/core": "^7.2.0",
     "@babel/plugin-proposal-class-properties": "^7.2.1",
+    "@babel/plugin-transform-runtime": "^7.4.4",
     "@babel/preset-env": "^7.2.0",
     "babel-loader": "^8.0.4",
     "eslint": "^5.10.0",
