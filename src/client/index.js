@@ -89,7 +89,7 @@ const onReady = (config, docId, socket, askForAccess) => (
       }
 
       if (message.type === MessageTypes.GRANTED) {
-        const shareDBSocket = new WebSocket(`ws${protocolEnd}://${host}:${port}/sharedb?username=${username}&token=${message.payload}`)
+        const shareDBSocket = new WebSocket(`ws${protocolEnd}://${host}:${port}/sharedb/${docId}?username=${username}&token=${message.payload}`)
         saveToken(message.payload, docId, username)
         const connection = new sharedb.Connection(shareDBSocket)
 
@@ -143,9 +143,9 @@ const loadShareDBDoc = async (config = configSchema, askForAccess = defaultAskFo
   let socket
 
   if (token) {
-    socket = new WebSocket(`ws${protocolEnd}://${host}:${port}/auth?username=${username}&token=${token}`)
+    socket = new WebSocket(`ws${protocolEnd}://${host}:${port}/auth/${docId}?username=${username}&token=${token}`)
   } else {
-    socket = new WebSocket(`ws${protocolEnd}://${host}:${port}/auth?username=${username}`)
+    socket = new WebSocket(`ws${protocolEnd}://${host}:${port}/auth/${docId}?username=${username}`)
   }
 
   return onReady(config, docId, socket, askForAccess)

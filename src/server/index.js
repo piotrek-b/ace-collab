@@ -110,7 +110,7 @@ const onTokenProvided = (ws, docId, username, reqToken) => new Promise((resolve,
 })
 
 const onTokenNotProvided = (ws, docId, username) => new Promise(async (resolve, reject) => {
-  const admin = clients.find((client) => client.isAdmin)
+  const admin = clients.find((client) => client.isAdmin && client.docId === docId)
   const isThereAdmin = !!admin
 
   console.log(isThereAdmin)
