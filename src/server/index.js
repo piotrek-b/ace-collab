@@ -19,7 +19,7 @@ const MessageTypes = {
 const clients = []
 const histories = {}
 const broadcast = (targetDocId, messageToSend) => clients.forEach(({ chatWSClient, docId }) => {
-  if (chatWSClient.readyState === 1) {
+  if (!!chatWSClient && chatWSClient.readyState === 1) {
     if (targetDocId === docId) {
       chatWSClient.send(JSON.stringify(messageToSend))
     }
@@ -172,7 +172,8 @@ const postCode = async (req, res) => {
 }
 
 const authenticate = (ws, request) => {
-  const docId = request.url.split('/')[2]
+  const docId = getDocId(request)
+  console.error(docId)
   const [username, reqToken] = getToken(request)
 
   if (reqToken) {
@@ -296,5 +297,7 @@ const startServer = (port = 3333) => {
 
   httpServer.listen(port)
 }
+
+startServer()
 
 module.exports = startServer
