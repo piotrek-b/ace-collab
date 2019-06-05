@@ -277,7 +277,7 @@ const onUpgrade = (wss1, wss2, wss3) => (request, socket, head) => {
   }
 }
 
-const startServer = (port = 3333) => {
+const startServer = (port = 3333, host = '0.0.0.0') => {
   const expressInstance = express()
   const httpServer = http.createServer(expressInstance)
 
@@ -295,7 +295,7 @@ const startServer = (port = 3333) => {
 
   httpServer.on('upgrade', onUpgrade(wss1, wss2, wss3))
 
-  httpServer.listen(port)
+  httpServer.listen(port, host)
 }
 
 startServer()
