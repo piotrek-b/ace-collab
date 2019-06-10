@@ -5,6 +5,7 @@ const ShareDB = require('sharedb')
 const WebSocket = require('ws')
 const WebSocketJSONStream = require('websocket-json-stream')
 const url = require('url')
+const cors = require('cors')
 
 const MessageTypes = {
   HISTORY: 'HISTORY',
@@ -102,7 +103,7 @@ const onTokenProvided = (ws, docId, username, reqToken) => new Promise((resolve,
 
   if (!isClientThere) {
     denyConnection(ws)
-    reject('There is no client with such token')
+    reject(new Error('There is no client with such token'))
   } else {
     client.authWSClient = ws
     resolve(onAccessGranted(ws, docId, username, true, reqToken))
@@ -116,7 +117,7 @@ const onTokenNotProvided = (ws, docId, username) => new Promise(async (resolve, 
   console.log(isThereAdmin)
   if (!isThereAdmin) {
     denyConnection(ws)
-    reject('Admin not logged in')
+    reject(new Error('Admin not logged in'))
   } else {
     const adminClient = admin.authWSClient
 
@@ -125,12 +126,15 @@ const onTokenNotProvided = (ws, docId, username) => new Promise(async (resolve, 
       resolve(onAccessGranted(ws, docId, username))
     } else {
       denyConnection(ws)
-      reject('Access not provided')
+      reject(new Error('Access not provided'))
     }
   }
 })
 
-const shareDB = new ShareDB()
+const shareDB = new ShareDB({
+  disableDocAction: true,
+  disableSpaceDelimitedActions: true,
+})
 
 const createDoc = () => (
   new Promise((res) => {
@@ -148,12 +152,6 @@ const createDoc = () => (
     })
   })
 )
-
-const cors = (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*')
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
-  next()
-}
 
 const postCode = async (req, res) => {
   const id = await createDoc()
@@ -173,7 +171,6 @@ const postCode = async (req, res) => {
 
 const authenticate = (ws, request) => {
   const docId = getDocId(request)
-  console.error(docId)
   const [username, reqToken] = getToken(request)
 
   if (reqToken) {
@@ -277,11 +274,29 @@ const onUpgrade = (wss1, wss2, wss3) => (request, socket, head) => {
   }
 }
 
-const startServer = (port = 3333, host = '0.0.0.0') => {
+const startServer = (options = {}) => {
   const expressInstance = express()
   const httpServer = http.createServer(expressInstance)
 
-  expressInstance.use(cors)
+  const allowedOrigins = options.allowedOrigins || []
+  const port = options.port || 3333
+  const host = options.host || '0.0.0.0'
+
+  const corsOptions = {
+    origin: (origin, callback) => {
+      if (allowedOrigins.length === 0) {
+        callback(null, true)
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
+  }
+
+  expressInstance.use(cors(corsOptions))
 
   expressInstance.post('/code', postCode)
 
@@ -296,8 +311,7 @@ const startServer = (port = 3333, host = '0.0.0.0') => {
   httpServer.on('upgrade', onUpgrade(wss1, wss2, wss3))
 
   httpServer.listen(port, host)
+  console.log(`Listening - host ${host}, port ${port}.`)
 }
-
-startServer()
 
 module.exports = startServer
