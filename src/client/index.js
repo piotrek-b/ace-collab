@@ -153,7 +153,7 @@ const loadShareDBDoc = async (config = configSchema, askForAccess = defaultAskFo
       socket = new WebSocket(`ws${protocolEnd}://${host}:${port}/auth/${docId}?username=${username}`)
     }
   } catch (error) {
-    throw new Error('Can not connect to the server')
+    throw new Error('Cannot connect to the server')
   }
 
   return onReady(config, docId, socket, askForAccess)
