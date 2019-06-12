@@ -15,6 +15,7 @@ const MessageTypes = {
   GRANTED: 'GRANTED',
   DENIED: 'DENIED',
   ACCESS: 'ACCESS',
+  SESSION_NOT_AVAILABLE: 'SESSION_NOT_AVAILABLE',
 }
 
 const clients = []
@@ -49,6 +50,11 @@ const allowConnection = (ws, reqToken) => {
 
 const denyConnection = (ws) => {
   ws.send(JSON.stringify({ type: MessageTypes.DENIED }))
+  ws.terminate()
+}
+
+const sendNoSessionInfo = (ws) => {
+  ws.send(JSON.stringify({ type: MessageTypes.SESSION_NOT_AVAILABLE }))
   ws.terminate()
 }
 
@@ -111,22 +117,28 @@ const onTokenProvided = (ws, docId, username, reqToken) => new Promise((resolve,
 })
 
 const onTokenNotProvided = (ws, docId, username) => new Promise(async (resolve, reject) => {
-  const admin = clients.find((client) => client.isAdmin && client.docId === docId)
-  const isThereAdmin = !!admin
+  const isThereDocId = !!clients.find((client) => client.docId === docId)
 
-  console.log(isThereAdmin)
-  if (!isThereAdmin) {
-    denyConnection(ws)
-    reject(new Error('Admin not logged in'))
+  if (!isThereDocId) {
+    sendNoSessionInfo(ws)
+    reject(new Error('Session not available'))
   } else {
-    const adminClient = admin.authWSClient
+    const admin = clients.find((client) => client.isAdmin && client.docId === docId)
+    const isThereAdmin = !!admin
 
-    const accessGranted = await askForAccess(adminClient, username)
-    if (accessGranted) {
-      resolve(onAccessGranted(ws, docId, username))
-    } else {
+    if (!isThereAdmin) {
       denyConnection(ws)
-      reject(new Error('Access not provided'))
+      reject(new Error('Admin not logged in'))
+    } else {
+      const adminClient = admin.authWSClient
+
+      const accessGranted = await askForAccess(adminClient, username)
+      if (accessGranted) {
+        resolve(onAccessGranted(ws, docId, username))
+      } else {
+        denyConnection(ws)
+        reject(new Error('Access not provided'))
+      }
     }
   }
 })
@@ -184,7 +196,7 @@ const authWSConnection = async (ws, request) => {
   try {
     await authenticate(ws, request)
   } catch (error) {
-    console.log(error)
+    ws.terminate()
   }
 }
 
@@ -232,7 +244,7 @@ const chatWSConnection = async (ws, request) => {
       broadcast(docId, messageToSend)
     })
   } catch (error) {
-    console.log(error)
+    ws.terminate()
   }
 }
 
@@ -251,7 +263,6 @@ const shareDBWsConnection = async (ws, request) => {
     const webSocketJSONStream = new WebSocketJSONStream(ws)
     shareDB.listen(webSocketJSONStream)
   } catch (error) {
-    console.log(error)
     ws.terminate()
   }
 }
@@ -286,9 +297,7 @@ const startServer = (options = {}) => {
     origin: (origin, callback) => {
       if (allowedOrigins.length === 0) {
         callback(null, true)
-      }
-
-      if (allowedOrigins.includes(origin)) {
+      } else if (allowedOrigins.includes(origin)) {
         callback(null, true)
       } else {
         callback(new Error('Not allowed by CORS'))

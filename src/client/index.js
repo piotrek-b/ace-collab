@@ -2,7 +2,7 @@ import axios from 'axios'
 import sharedb from 'sharedb/lib/client'
 import isEmpty from 'lodash/isEmpty'
 
-import { MessageTypes } from '../../consts'
+import { ErrorTypes, MessageTypes } from '../../consts'
 
 
 const configSchema = {
@@ -93,25 +93,23 @@ const onReady = (config, docId, socket, askForAccess) => (
         saveToken(message.payload, docId, username)
         const connection = new sharedb.Connection(shareDBSocket)
 
-        try {
-          const doc = connection.get('codes', docId)
+        const doc = connection.get('codes', docId)
 
-          doc.subscribe(subscribe(doc))
+        doc.subscribe(subscribe(doc))
 
-          Object.keys(on).forEach((event) => {
-            doc.on(event, on[event](doc))
-          })
+        Object.keys(on).forEach((event) => {
+          doc.on(event, on[event](doc))
+        })
 
-          doc.on('load', () => res({
-            doc,
-            username,
-            token: message.payload,
-          }))
-        } catch (error) {
-          rej(new Error('Session not available'))
-        }
+        doc.on('load', () => res({
+          doc,
+          username,
+          token: message.payload,
+        }))
       } else if (message.type === MessageTypes.DENIED) {
-        rej(new Error('Access denied'))
+        rej(new Error(ErrorTypes.ACCESS_DENIED))
+      } else if (message.type === MessageTypes.SESSION_NOT_AVAILABLE) {
+        rej(new Error(ErrorTypes.SESSION_NOT_AVAILABLE))
       }
     })
   })
@@ -153,7 +151,7 @@ const loadShareDBDoc = async (config = configSchema, askForAccess = defaultAskFo
       socket = new WebSocket(`ws${protocolEnd}://${host}:${port}/auth/${docId}?username=${username}`)
     }
   } catch (error) {
-    throw new Error('Cannot connect to the server')
+    throw new Error(ErrorTypes.CONNECTION_ERROR)
   }
 
   return onReady(config, docId, socket, askForAccess)
