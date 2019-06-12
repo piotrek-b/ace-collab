@@ -133,7 +133,12 @@ const loadShareDBDoc = async (config = configSchema, askForAccess = defaultAskFo
   let token
 
   if (isEmpty(docId)) {
-    const response = await axios.post(`http${protocolEnd}://${host}:${port}/code`)
+    let response
+    try {
+      response = await axios.post(`http${protocolEnd}://${host}:${port}/code`)
+    } catch (error) {
+      throw new Error(ErrorTypes.CONNECTION_ERROR)
+    }
     docId = response.data.id
     // eslint-disable-next-line prefer-destructuring
     token = response.data.token
