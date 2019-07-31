@@ -178,7 +178,10 @@ const postCode = async (req, res) => {
     isAdmin: true,
   })
 
-  res.send(JSON.stringify({ id, token }))
+  res.send(JSON.stringify({
+    id,
+    token,
+  }))
 }
 
 const authenticate = (ws, request) => {
@@ -196,6 +199,7 @@ const authWSConnection = async (ws, request) => {
   try {
     await authenticate(ws, request)
   } catch (error) {
+    console.error(error.message)
     ws.terminate()
   }
 }
@@ -220,14 +224,20 @@ const chatWSConnection = async (ws, request) => {
     }
     const history = histories[docId]
 
-    ws.send(JSON.stringify({ type: MessageTypes.HISTORY, payload: history }))
+    ws.send(JSON.stringify({
+      type: MessageTypes.HISTORY,
+      payload: history,
+    }))
 
     ws.on('message', (message) => {
       const messageData = JSON.parse(message)
 
       const messageToSend = {
         ...messageData,
-        metadata: { author: username, time: new Date().toJSON() },
+        metadata: {
+          author: username,
+          time: new Date().toJSON(),
+        },
       }
       history.push(messageToSend)
 
@@ -238,12 +248,16 @@ const chatWSConnection = async (ws, request) => {
       const messageToSend = {
         type: MessageTypes.USER_LEFT,
         payload: username,
-        metadata: { author: username, time: new Date().toJSON() },
+        metadata: {
+          author: username,
+          time: new Date().toJSON(),
+        },
       }
       history.push(messageToSend)
       broadcast(docId, messageToSend)
     })
   } catch (error) {
+    console.error(error.message)
     ws.terminate()
   }
 }
@@ -263,6 +277,7 @@ const shareDBWsConnection = async (ws, request) => {
     const webSocketJSONStream = new WebSocketJSONStream(ws)
     shareDB.listen(webSocketJSONStream)
   } catch (error) {
+    console.error(error.message)
     ws.terminate()
   }
 }
@@ -300,7 +315,7 @@ const startServer = (options = {}) => {
       } else if (allowedOrigins.includes(origin)) {
         callback(null, true)
       } else {
-        callback(new Error('Not allowed by CORS'))
+        callback('Not allowed by CORS')
       }
     },
   }
