@@ -346,5 +346,3 @@ const startServer = (options = {}) => {
 }
 
 module.exports = startServer
-
-startServer()
