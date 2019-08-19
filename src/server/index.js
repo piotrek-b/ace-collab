@@ -308,6 +308,8 @@ const startServer = (options = {}) => {
   const port = options.port || 3333
   const host = options.host || '0.0.0.0'
 
+  console.log(options)
+
   const corsOptions = {
     origin: (origin, callback) => {
       if (allowedOrigins.length === 0) {
@@ -339,3 +341,5 @@ const startServer = (options = {}) => {
 }
 
 module.exports = startServer
+
+startServer()
