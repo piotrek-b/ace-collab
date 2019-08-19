@@ -304,11 +304,16 @@ const startServer = (options = {}) => {
   const expressInstance = express()
   const httpServer = http.createServer(expressInstance)
 
-  const allowedOrigins = options.allowedOrigins || []
+  let allowedOrigins = []
+
+  try {
+    allowedOrigins = options.allowedOrigins ? JSON.parse(options.allowedOrigins) : []
+  } catch (error) {
+    allowedOrigins = []
+  }
+
   const port = options.port || 3333
   const host = options.host || '0.0.0.0'
-
-  console.log(options)
 
   const corsOptions = {
     origin: (origin, callback) => {
