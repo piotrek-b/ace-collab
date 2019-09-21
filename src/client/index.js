@@ -7,9 +7,11 @@ import { ErrorTypes, MessageTypes } from '../../consts'
 
 const configSchema = {
   on: {
-    op: () => () => {},
+    op: () => () => {
+    },
   },
-  subscribe: () => () => {},
+  subscribe: () => () => {
+  },
   server: {
     docId: '',
     host: '',
@@ -97,9 +99,10 @@ const onReady = (config, docId, socket, askForAccess) => (
 
         doc.subscribe(subscribe(doc))
 
-        Object.keys(on).forEach((event) => {
-          doc.on(event, on[event](doc))
-        })
+        Object.keys(on)
+          .forEach((event) => {
+            doc.on(event, on[event](doc))
+          })
 
         doc.on('load', () => res({
           doc,
@@ -116,7 +119,11 @@ const onReady = (config, docId, socket, askForAccess) => (
   })
 )
 
-const loadShareDBDoc = async (config = configSchema, askForAccess = defaultAskForAccess) => {
+const loadShareDBDoc = async (
+  config = configSchema,
+  readOnly = false,
+  askForAccess = defaultAskForAccess
+) => {
   const {
     server,
   } = config
@@ -136,7 +143,11 @@ const loadShareDBDoc = async (config = configSchema, askForAccess = defaultAskFo
   if (isEmpty(docId)) {
     let response
     try {
-      response = await axios.post(`http${protocolEnd}://${host}:${port}/code`)
+      if (readOnly) {
+        response = await axios.post(`http${protocolEnd}://${host}:${port}/code?readonly=true`)
+      } else {
+        response = await axios.post(`http${protocolEnd}://${host}:${port}/code`)
+      }
     } catch (error) {
       throw new Error(ErrorTypes.CONNECTION_ERROR)
     }

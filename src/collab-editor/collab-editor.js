@@ -133,7 +133,7 @@ class CollabEditor {
     }
   }
 
-  init(server, askForAccess) {
+  init(server, readOnlyArg, askForAccess) {
     return new Promise(async (res, rej) => {
       try {
         const {
@@ -147,7 +147,7 @@ class CollabEditor {
           },
           server,
           subscribe: () => {},
-        }, askForAccess)
+        }, readOnlyArg, askForAccess)
 
         this.shareDBDoc = doc
         this.setEditorValue(doc)()

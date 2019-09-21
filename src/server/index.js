@@ -20,6 +20,7 @@ const MessageTypes = {
 }
 
 const clients = []
+const sessions = []
 const histories = {}
 const broadcast = (targetDocId, messageToSend) => clients.forEach(({ chatWSClient, docId }) => {
   if (!!chatWSClient && chatWSClient.readyState === 1) {
@@ -28,6 +29,13 @@ const broadcast = (targetDocId, messageToSend) => clients.forEach(({ chatWSClien
     }
   }
 })
+
+const getReadOnly = (req) => {
+  const { query } = url.parse(req.url, true)
+  const { readonly } = query
+
+  return !!readonly
+}
 
 const getToken = (req) => {
   const { query } = url.parse(req.url, true)
@@ -170,6 +178,7 @@ const createDoc = () => (
 const postCode = async (req, res) => {
   const id = await createDoc()
   const token = uuid.v4()
+  const readOnly = getReadOnly(req)
 
   clients.push({
     docId: id,
@@ -180,9 +189,15 @@ const postCode = async (req, res) => {
     isAdmin: true,
   })
 
+  sessions.push({
+    id,
+    readOnly,
+  })
+
   res.send(JSON.stringify({
     id,
     token,
+    readOnly,
   }))
 }
 
@@ -264,7 +279,7 @@ const chatWSConnection = async (ws, request) => {
   }
 }
 
-const shareDBWsConnection = (readOnly) => async (ws, request) => {
+const shareDBWsConnection = async (ws, request) => {
   try {
     const [, reqToken] = getToken(request)
     const client = clients
@@ -273,6 +288,8 @@ const shareDBWsConnection = (readOnly) => async (ws, request) => {
     if (!client) {
       throw new Error('ShareDB - Client not found')
     }
+
+    const readOnly = sessions.find((session) => session.id === client.docId)
 
     // eslint-disable-next-line no-param-reassign
     ws.readOnly = readOnly && !client.isAdmin
@@ -310,7 +327,6 @@ const startServer = (options = {}) => {
   const allowedOrigins = options.allowedOrigins || []
   const port = options.port || 3333
   const host = options.host || '0.0.0.0'
-  const readOnly = options.readOnly || false
 
   console.log(options)
 
@@ -334,7 +350,7 @@ const startServer = (options = {}) => {
   const wss2 = new WebSocket.Server({ noServer: true })
   const wss3 = new WebSocket.Server({ noServer: true })
 
-  wss1.on('connection', shareDBWsConnection(readOnly))
+  wss1.on('connection', shareDBWsConnection)
   wss2.on('connection', chatWSConnection)
   wss3.on('connection', authWSConnection)
 
