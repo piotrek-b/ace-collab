@@ -57,6 +57,7 @@ const serverConfig = {
   allowedOrigins: [], // Provide empty if want to allow entrance for every host, provide string values if want to allow only few
   host: '0.0.0.0',
   port: 3333,
+  readOnly: false, // If set to true, only admin is going to be able to edit the code, other users can only read it
 }
 
 startServer(serverConfig)

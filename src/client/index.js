@@ -105,6 +105,7 @@ const onReady = (config, docId, socket, askForAccess) => (
           doc,
           username,
           token: message.payload,
+          readOnly: message.readOnly,
         }))
       } else if (message.type === MessageTypes.DENIED) {
         rej(new Error(ErrorTypes.ACCESS_DENIED))

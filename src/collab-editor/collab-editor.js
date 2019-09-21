@@ -82,6 +82,8 @@ class CollabEditor {
       theme,
     } = config
 
+    this.anchorDOM = anchorDOM
+
     // Ace editor setup
     this.aceDoc = new Document('')
     this.virtualRenderer = new VirtualRenderer(anchorDOM)
@@ -134,7 +136,12 @@ class CollabEditor {
   init(server, askForAccess) {
     return new Promise(async (res, rej) => {
       try {
-        const { doc, username, token } = await loadShareDBDoc({
+        const {
+          doc,
+          username,
+          token,
+          readOnly,
+        } = await loadShareDBDoc({
           on: {
             op: this.setEditorValue,
           },
@@ -144,10 +151,20 @@ class CollabEditor {
 
         this.shareDBDoc = doc
         this.setEditorValue(doc)()
-        this.setEditorValueChangeHandler()
+        this.readOnly = readOnly
 
+        if (!readOnly) {
+          this.setEditorValueChangeHandler()
+        } else {
+          this.anchorDOM.querySelector('textarea').readOnly = true
+        }
 
-        res({ doc, username, token })
+        res({
+          doc,
+          username,
+          token,
+          readOnly,
+        })
       } catch (error) {
         rej(error)
       }

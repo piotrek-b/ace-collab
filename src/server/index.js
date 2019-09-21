@@ -3,9 +3,10 @@ const http = require('http')
 const express = require('express')
 const ShareDB = require('sharedb')
 const WebSocket = require('ws')
-const WebSocketJSONStream = require('websocket-json-stream')
 const url = require('url')
 const cors = require('cors')
+
+const WebSocketJSONStream = require('./wsjson')
 
 const MessageTypes = {
   HISTORY: 'HISTORY',
@@ -41,10 +42,11 @@ const getDocId = (request) => {
   return pathname.split('/')[2]
 }
 
-const allowConnection = (ws, reqToken) => {
+const allowConnection = (ws, reqToken, readOnly) => {
   ws.send(JSON.stringify({
     type: MessageTypes.GRANTED,
     payload: reqToken,
+    readOnly,
   }))
 }
 
@@ -84,7 +86,7 @@ const askForAccess = (adminClient, username) => {
   return Promise.resolve(false)
 }
 
-const onAccessGranted = (ws, docId, username, isClientThere, reqToken) => {
+const onAccessGranted = (ws, docId, username, isClientThere, reqToken, isAdmin) => {
   const token = reqToken || uuid.v4()
 
   if (!isClientThere) {
@@ -95,7 +97,7 @@ const onAccessGranted = (ws, docId, username, isClientThere, reqToken) => {
     })
   }
 
-  allowConnection(ws, token)
+  allowConnection(ws, token, !isAdmin)
 
   return {
     docId,
@@ -112,7 +114,7 @@ const onTokenProvided = (ws, docId, username, reqToken) => new Promise((resolve,
     reject(new Error('There is no client with such token'))
   } else {
     client.authWSClient = ws
-    resolve(onAccessGranted(ws, docId, username, true, reqToken))
+    resolve(onAccessGranted(ws, docId, username, true, reqToken, client.isAdmin))
   }
 })
 
@@ -262,7 +264,7 @@ const chatWSConnection = async (ws, request) => {
   }
 }
 
-const shareDBWsConnection = async (ws, request) => {
+const shareDBWsConnection = (readOnly) => async (ws, request) => {
   try {
     const [, reqToken] = getToken(request)
     const client = clients
@@ -272,8 +274,9 @@ const shareDBWsConnection = async (ws, request) => {
       throw new Error('ShareDB - Client not found')
     }
 
+    // eslint-disable-next-line no-param-reassign
+    ws.readOnly = readOnly && !client.isAdmin
     client.shareDBWSClient = ws
-
     const webSocketJSONStream = new WebSocketJSONStream(ws)
     shareDB.listen(webSocketJSONStream)
   } catch (error) {
@@ -307,6 +310,7 @@ const startServer = (options = {}) => {
   const allowedOrigins = options.allowedOrigins || []
   const port = options.port || 3333
   const host = options.host || '0.0.0.0'
+  const readOnly = options.readOnly || false
 
   console.log(options)
 
@@ -330,7 +334,7 @@ const startServer = (options = {}) => {
   const wss2 = new WebSocket.Server({ noServer: true })
   const wss3 = new WebSocket.Server({ noServer: true })
 
-  wss1.on('connection', shareDBWsConnection)
+  wss1.on('connection', shareDBWsConnection(readOnly))
   wss2.on('connection', chatWSConnection)
   wss3.on('connection', authWSConnection)
 
