@@ -37,6 +37,13 @@ const getReadOnly = (req) => {
   return !!readonly
 }
 
+const getOpen = (req) => {
+  const { query } = url.parse(req.url, true)
+  const { open } = query
+
+  return !!open
+}
+
 const getToken = (req) => {
   const { query } = url.parse(req.url, true)
   const { username: name, token } = query
@@ -105,7 +112,9 @@ const onAccessGranted = (ws, docId, username, isClientThere, reqToken, isAdmin) 
     })
   }
 
-  allowConnection(ws, token, !isAdmin)
+  const { readOnly } = (sessions.find((session) => session.id === docId).readOnly || {})
+
+  allowConnection(ws, token, readOnly && !isAdmin)
 
   return {
     docId,
@@ -127,16 +136,19 @@ const onTokenProvided = (ws, docId, username, reqToken) => new Promise((resolve,
 })
 
 const onTokenNotProvided = (ws, docId, username) => new Promise(async (resolve, reject) => {
-  const isThereDocId = !!clients.find((client) => client.docId === docId)
+  const session = sessions.find((s) => s.id === docId)
+  const isThereSession = !!session
 
-  if (!isThereDocId) {
+  if (!isThereSession) {
     sendNoSessionInfo(ws)
     reject(new Error('Session not available'))
   } else {
     const admin = clients.find((client) => client.isAdmin && client.docId === docId)
     const isThereAdmin = !!admin
 
-    if (!isThereAdmin) {
+    if (session.open) {
+      resolve(onAccessGranted(ws, docId, username))
+    } else if (!isThereAdmin) {
       denyConnection(ws)
       reject(new Error('Admin not logged in'))
     } else {
@@ -179,6 +191,7 @@ const postCode = async (req, res) => {
   const id = await createDoc()
   const token = uuid.v4()
   const readOnly = getReadOnly(req)
+  const open = getOpen(req)
 
   clients.push({
     docId: id,
@@ -192,6 +205,7 @@ const postCode = async (req, res) => {
   sessions.push({
     id,
     readOnly,
+    open,
   })
 
   res.send(JSON.stringify({

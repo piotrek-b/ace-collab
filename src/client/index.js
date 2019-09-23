@@ -121,7 +121,7 @@ const onReady = (config, docId, socket, askForAccess) => (
 
 const loadShareDBDoc = async (
   config = configSchema,
-  readOnly = false,
+  accessOptions = { readOnly: false, open: false },
   askForAccess = defaultAskForAccess
 ) => {
   const {
@@ -143,11 +143,17 @@ const loadShareDBDoc = async (
   if (isEmpty(docId)) {
     let response
     try {
-      if (readOnly) {
-        response = await axios.post(`http${protocolEnd}://${host}:${port}/code?readonly=true`)
-      } else {
-        response = await axios.post(`http${protocolEnd}://${host}:${port}/code`)
+      let part = ''
+
+      if (accessOptions.readOnly) {
+        part = '?readonly=true'
       }
+
+      if (accessOptions.open) {
+        part = accessOptions.readOnly ? `${part}&open=true` : '?open=true'
+      }
+
+      response = await axios.post(`http${protocolEnd}://${host}:${port}/code${part}`)
     } catch (error) {
       throw new Error(ErrorTypes.CONNECTION_ERROR)
     }
