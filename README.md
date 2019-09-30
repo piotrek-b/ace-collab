@@ -43,8 +43,9 @@ const serverConfig = {
   ssl: false,
 }
 const readOnly = false // if set to true, only admin will be able to modify the code
+const open = false // if set to true, users can join without admin's permission
 
-editor.init(serverConfig, readOnly);
+editor.init(serverConfig, { readOnly, open });
 ```
 
 
