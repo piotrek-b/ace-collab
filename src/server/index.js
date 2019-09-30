@@ -109,10 +109,11 @@ const onAccessGranted = (ws, docId, username, isClientThere, reqToken, isAdmin) 
       docId,
       authWSClient: ws,
       token,
+      isAdmin,
     })
   }
 
-  const { readOnly } = (sessions.find((session) => session.id === docId).readOnly || {})
+  const { readOnly } = (sessions.find((session) => session.id === docId) || {})
 
   allowConnection(ws, token, readOnly && !isAdmin)
 
@@ -303,8 +304,7 @@ const shareDBWsConnection = async (ws, request) => {
       throw new Error('ShareDB - Client not found')
     }
 
-    const readOnly = sessions.find((session) => session.id === client.docId)
-
+    const { readOnly } = (sessions.find((session) => session.id === client.docId) || {})
     // eslint-disable-next-line no-param-reassign
     ws.readOnly = readOnly && !client.isAdmin
     client.shareDBWSClient = ws
